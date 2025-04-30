@@ -1,0 +1,2 @@
+model,MSE,RMSE,MAE,R2,MAPE,param_hidden_dims,param_output_dim
+linear,4511.722,67.16936,49.493004,0.394717276096344,169830750.0,"[32, 16]",1

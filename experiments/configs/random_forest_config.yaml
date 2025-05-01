@@ -1,0 +1,26 @@
+# Random Forest model configuration
+
+model_type: random_forest
+output_type: single
+
+# Data parameters
+sequence_length: 24  # Input sequence length
+forecast_horizon: 24  # Number of steps to predict
+target_variable: temperature  # Target variable to predict
+batch_size: 32
+
+# Feature engineering parameters
+include_time_features: true  # Include time-based features like hour, day, etc.
+normalization: standard  # Normalization method (standard, minmax, robust, none)
+
+# Random Forest parameters
+n_estimators: 200
+max_depth: 20
+min_samples_split: 2
+min_samples_leaf: 1
+max_features: 'sqrt'  # 'sqrt', 'log2', or float value
+random_state: 42
+
+# Training parameters
+validation_split: 0.2  # Validation data ratio
+test_split: 0.1  # Test data ratio

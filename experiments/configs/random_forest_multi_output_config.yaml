@@ -1,0 +1,32 @@
+# Configuration file for Random Forest Multi-Output model experiment
+
+model:
+  name: random_forest_multi_output
+  params:
+    n_estimators: 100
+    max_depth: 20
+    random_state: 42
+
+data:
+  file_path: data/combined_data.csv
+  target_cols:
+    - Rainfall
+    - Min_Temperature
+    - Max_Temperature
+  seq_length: 14
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  batch_size: 32
+
+training:
+  # Random Forest doesn't need these but keeping them for API consistency
+  epochs: 1
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  clip_grad: 1.0
+
+paths:
+  model_save_path: results/models/random_forest_multi_output_model.pt
+  metrics_save_path: results/metrics/random_forest_multi_output_metrics.csv
+  figures_path: results/figures/random_forest_multi_output

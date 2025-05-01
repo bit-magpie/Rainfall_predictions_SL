@@ -17,6 +17,7 @@ from experiments.run_experiment import run_gru_experiment, run_cnn_lstm_experime
 # Import functions for multi-output models
 from experiments.run_experiment import run_gru_multi_output_experiment, run_lstm_multi_output_experiment
 from experiments.run_experiment import run_cnn_lstm_multi_output_experiment, run_transformer_multi_output_experiment
+from experiments.run_experiment import run_random_forest_multi_output_experiment
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
         choices=[
             'linear', 'lstm', 'gru', 'cnn_lstm', 'transformer', 
             'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output',
+            'random_forest_multi_output',
             'all', 'all_single', 'all_multi'
         ],
         default='all',
@@ -46,7 +48,7 @@ def main():
     
     # Define model groups
     single_output_models = ['linear', 'lstm', 'gru', 'cnn_lstm', 'transformer']
-    multi_output_models = ['gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output']
+    multi_output_models = ['gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output', 'random_forest_multi_output']
     
     # Determine which models to run
     models_to_run = []
@@ -148,6 +150,16 @@ def main():
             run_transformer_multi_output_experiment(transformer_multi_output_config)
         else:
             print(f"Error: Transformer Multi-Output model config not found at {transformer_multi_output_config_path}")
+    
+    # Run Random Forest Multi-Output model experiment if requested
+    if 'random_forest_multi_output' in models_to_run:
+        random_forest_multi_output_config_path = config_dir / "random_forest_multi_output_config.yaml"
+        if random_forest_multi_output_config_path.exists():
+            print(f"\n{'='*50}\nRunning Random Forest Multi-Output Model Experiment\n{'='*50}")
+            random_forest_multi_output_config = load_config(random_forest_multi_output_config_path)
+            run_random_forest_multi_output_experiment(random_forest_multi_output_config)
+        else:
+            print(f"Error: Random Forest Multi-Output model config not found at {random_forest_multi_output_config_path}")
 
 
 if __name__ == "__main__":
@@ -158,7 +170,8 @@ if __name__ == "__main__":
     # Create directories for each model's results
     model_types = [
         'linear', 'lstm', 'gru', 'cnn_lstm', 'transformer', 
-        'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output'
+        'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output',
+        'random_forest_multi_output'
     ]
     for model_type in model_types:
         os.makedirs(f"results/figures/{model_type}", exist_ok=True)

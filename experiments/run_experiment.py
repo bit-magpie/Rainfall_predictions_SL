@@ -13,6 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from models.linear.model import LinearRegressionModel, train as train_linear, predict as predict_linear, get_feature_importance
 from models.lstm.model import LSTMModel, train as train_lstm, predict as predict_lstm, save_model
+from models.gru.model import GRUModel, train as train_gru, predict as predict_gru
+from models.cnn_lstm.model import CNNLSTMModel, train as train_cnn_lstm, predict as predict_cnn_lstm
+from models.transformer.model import TransformerModel, train as train_transformer, predict as predict_transformer
 from utils.data_utils import prepare_data, inverse_transform_target
 from utils.metrics import calculate_metrics, save_metrics
 from utils.plot_utils import plot_training_history, plot_predictions, plot_scatter, plot_feature_importance
@@ -253,6 +256,292 @@ def run_lstm_experiment(config):
     )
 
 
+def run_gru_experiment(config):
+    """Run experiment with GRU model."""
+    print("Running GRU model experiment...")
+    
+    # Prepare data
+    data_dict = prepare_data(
+        file_path=config['data']['file_path'],
+        target_col=config['data']['target_col'],
+        seq_length=config['data']['seq_length'],
+        test_size=config['data']['test_size'],
+        val_size=config['data']['val_size'],
+        random_state=config['data']['random_state']
+    )
+    
+    # Create dataloaders
+    train_loader, val_loader, test_loader = create_dataloaders(
+        data_dict, batch_size=config['data']['batch_size']
+    )
+    
+    # Get input size
+    input_size = data_dict['X_train'].shape[2]  # Number of features
+    
+    # Create model
+    model = GRUModel(
+        input_size=input_size,
+        hidden_size=config['model']['params']['hidden_size'],
+        num_layers=config['model']['params']['num_layers'],
+        output_size=config['model']['params']['output_size'],
+        dropout=config['model']['params']['dropout'],
+        bidirectional=config['model']['params'].get('bidirectional', False)
+    )
+    
+    # Train model
+    history = train_gru(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        epochs=config['training']['epochs'],
+        learning_rate=config['training']['learning_rate'],
+        weight_decay=config['training']['weight_decay'],
+        clip_grad=config['training']['clip_grad']
+    )
+    
+    # Evaluate model
+    y_true, y_pred = predict_gru(model, test_loader)
+    
+    # Inverse transform predictions and true values
+    y_true_original = inverse_transform_target(y_true, data_dict['scaler_y'])
+    y_pred_original = inverse_transform_target(y_pred, data_dict['scaler_y'])
+    
+    # Calculate metrics
+    metrics = calculate_metrics(y_true_original, y_pred_original)
+    print("\nTest Metrics:")
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:.4f}")
+    
+    # Create results directory if it doesn't exist
+    os.makedirs(os.path.dirname(config['paths']['model_save_path']), exist_ok=True)
+    os.makedirs(config['paths']['figures_path'], exist_ok=True)
+    
+    # Save model
+    save_model(model, config['paths']['model_save_path'])
+    print(f"Model saved to {config['paths']['model_save_path']}")
+    
+    # Save metrics
+    save_metrics(
+        metrics_dict=metrics,
+        model_name="gru",
+        config=config['model']['params'],
+        file_path=config['paths']['metrics_save_path']
+    )
+    
+    # Plot and save training history
+    plot_training_history(
+        history,
+        title="GRU Model Training History",
+        save_path=os.path.join(config['paths']['figures_path'], "training_history.png")
+    )
+    
+    # Plot and save predictions
+    plot_predictions(
+        y_true_original, y_pred_original,
+        title="GRU Model Predictions",
+        save_path=os.path.join(config['paths']['figures_path'], "predictions.png")
+    )
+    
+    # Plot and save scatter
+    plot_scatter(
+        y_true_original, y_pred_original,
+        title="GRU Model: Predicted vs Actual",
+        save_path=os.path.join(config['paths']['figures_path'], "scatter.png")
+    )
+
+
+def run_cnn_lstm_experiment(config):
+    """Run experiment with CNN-LSTM model."""
+    print("Running CNN-LSTM model experiment...")
+    
+    # Prepare data
+    data_dict = prepare_data(
+        file_path=config['data']['file_path'],
+        target_col=config['data']['target_col'],
+        seq_length=config['data']['seq_length'],
+        test_size=config['data']['test_size'],
+        val_size=config['data']['val_size'],
+        random_state=config['data']['random_state']
+    )
+    
+    # Create dataloaders
+    train_loader, val_loader, test_loader = create_dataloaders(
+        data_dict, batch_size=config['data']['batch_size']
+    )
+    
+    # Get input dimensions
+    input_size = data_dict['X_train'].shape[2]  # Number of features
+    seq_length = data_dict['X_train'].shape[1]  # Sequence length
+    
+    # Create model
+    model = CNNLSTMModel(
+        input_size=input_size,
+        seq_length=seq_length,
+        cnn_filters=config['model']['params']['cnn_filters'],
+        kernel_size=config['model']['params']['kernel_size'],
+        lstm_hidden=config['model']['params']['lstm_hidden'],
+        lstm_layers=config['model']['params']['lstm_layers'],
+        output_size=config['model']['params']['output_size'],
+        dropout=config['model']['params']['dropout']
+    )
+    
+    # Train model
+    history = train_cnn_lstm(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        epochs=config['training']['epochs'],
+        learning_rate=config['training']['learning_rate'],
+        weight_decay=config['training']['weight_decay'],
+        clip_grad=config['training']['clip_grad']
+    )
+    
+    # Evaluate model
+    y_true, y_pred = predict_cnn_lstm(model, test_loader)
+    
+    # Inverse transform predictions and true values
+    y_true_original = inverse_transform_target(y_true, data_dict['scaler_y'])
+    y_pred_original = inverse_transform_target(y_pred, data_dict['scaler_y'])
+    
+    # Calculate metrics
+    metrics = calculate_metrics(y_true_original, y_pred_original)
+    print("\nTest Metrics:")
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:.4f}")
+    
+    # Create results directory if it doesn't exist
+    os.makedirs(os.path.dirname(config['paths']['model_save_path']), exist_ok=True)
+    os.makedirs(config['paths']['figures_path'], exist_ok=True)
+    
+    # Save model
+    save_model(model, config['paths']['model_save_path'])
+    print(f"Model saved to {config['paths']['model_save_path']}")
+    
+    # Save metrics
+    save_metrics(
+        metrics_dict=metrics,
+        model_name="cnn_lstm",
+        config=config['model']['params'],
+        file_path=config['paths']['metrics_save_path']
+    )
+    
+    # Plot and save training history
+    plot_training_history(
+        history,
+        title="CNN-LSTM Model Training History",
+        save_path=os.path.join(config['paths']['figures_path'], "training_history.png")
+    )
+    
+    # Plot and save predictions
+    plot_predictions(
+        y_true_original, y_pred_original,
+        title="CNN-LSTM Model Predictions",
+        save_path=os.path.join(config['paths']['figures_path'], "predictions.png")
+    )
+    
+    # Plot and save scatter
+    plot_scatter(
+        y_true_original, y_pred_original,
+        title="CNN-LSTM Model: Predicted vs Actual",
+        save_path=os.path.join(config['paths']['figures_path'], "scatter.png")
+    )
+
+
+def run_transformer_experiment(config):
+    """Run experiment with Transformer model."""
+    print("Running Transformer model experiment...")
+    
+    # Prepare data
+    data_dict = prepare_data(
+        file_path=config['data']['file_path'],
+        target_col=config['data']['target_col'],
+        seq_length=config['data']['seq_length'],
+        test_size=config['data']['test_size'],
+        val_size=config['data']['val_size'],
+        random_state=config['data']['random_state']
+    )
+    
+    # Create dataloaders
+    train_loader, val_loader, test_loader = create_dataloaders(
+        data_dict, batch_size=config['data']['batch_size']
+    )
+    
+    # Get input size
+    input_size = data_dict['X_train'].shape[2]  # Number of features
+    
+    # Create model
+    model = TransformerModel(
+        input_size=input_size,
+        d_model=config['model']['params']['d_model'],
+        nhead=config['model']['params']['nhead'],
+        num_layers=config['model']['params']['num_layers'],
+        dim_feedforward=config['model']['params']['dim_feedforward'],
+        output_size=config['model']['params']['output_size'],
+        dropout=config['model']['params']['dropout']
+    )
+    
+    # Train model
+    history = train_transformer(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        epochs=config['training']['epochs'],
+        learning_rate=config['training']['learning_rate'],
+        weight_decay=config['training']['weight_decay'],
+        max_grad_norm=config['training']['max_grad_norm']
+    )
+    
+    # Evaluate model
+    y_true, y_pred = predict_transformer(model, test_loader)
+    
+    # Inverse transform predictions and true values
+    y_true_original = inverse_transform_target(y_true, data_dict['scaler_y'])
+    y_pred_original = inverse_transform_target(y_pred, data_dict['scaler_y'])
+    
+    # Calculate metrics
+    metrics = calculate_metrics(y_true_original, y_pred_original)
+    print("\nTest Metrics:")
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:.4f}")
+    
+    # Create results directory if it doesn't exist
+    os.makedirs(os.path.dirname(config['paths']['model_save_path']), exist_ok=True)
+    os.makedirs(config['paths']['figures_path'], exist_ok=True)
+    
+    # Save model
+    save_model(model, config['paths']['model_save_path'])
+    print(f"Model saved to {config['paths']['model_save_path']}")
+    
+    # Save metrics
+    save_metrics(
+        metrics_dict=metrics,
+        model_name="transformer",
+        config=config['model']['params'],
+        file_path=config['paths']['metrics_save_path']
+    )
+    
+    # Plot and save training history
+    plot_training_history(
+        history,
+        title="Transformer Model Training History",
+        save_path=os.path.join(config['paths']['figures_path'], "training_history.png")
+    )
+    
+    # Plot and save predictions
+    plot_predictions(
+        y_true_original, y_pred_original,
+        title="Transformer Model Predictions",
+        save_path=os.path.join(config['paths']['figures_path'], "predictions.png")
+    )
+    
+    # Plot and save scatter
+    plot_scatter(
+        y_true_original, y_pred_original,
+        title="Transformer Model: Predicted vs Actual",
+        save_path=os.path.join(config['paths']['figures_path'], "scatter.png")
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run a rainfall prediction experiment")
     parser.add_argument(
@@ -271,6 +560,12 @@ def main():
         run_linear_experiment(config)
     elif config['model']['name'].lower() == 'lstm':
         run_lstm_experiment(config)
+    elif config['model']['name'].lower() == 'gru':
+        run_gru_experiment(config)
+    elif config['model']['name'].lower() == 'cnn_lstm':
+        run_cnn_lstm_experiment(config)
+    elif config['model']['name'].lower() == 'transformer':
+        run_transformer_experiment(config)
     else:
         raise ValueError(f"Unsupported model: {config['model']['name']}")
 

@@ -1,0 +1,28 @@
+model:
+  name: "gru"
+  params:
+    hidden_size: 64
+    num_layers: 2
+    output_size: 1
+    dropout: 0.2
+    bidirectional: true  # Using bidirectional GRU for better performance
+
+data:
+  file_path: "data/combined_data.csv"
+  target_col: "Rainfall"
+  seq_length: 12  # Number of time steps to use as input
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+  batch_size: 32
+
+training:
+  epochs: 300
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  clip_grad: 5.0
+
+paths:
+  model_save_path: "results/models/gru_model.pt"
+  metrics_save_path: "results/metrics/gru_metrics.csv"
+  figures_path: "results/figures/gru/"

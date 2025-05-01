@@ -1,0 +1,2 @@
+model,MSE,RMSE,MAE,R2,MAPE,param_cnn_filters,param_kernel_size,param_lstm_hidden,param_lstm_layers,param_output_size,param_dropout
+cnn_lstm,6319.9395,79.49805,52.194633,0.1696733832359314,517531500.0,"[32, 64]",3,64,1,1,0.2

@@ -1,0 +1,29 @@
+model:
+  name: "cnn_lstm"
+  params:
+    cnn_filters: [32, 64]  # Number of filters in each convolutional layer
+    kernel_size: 3
+    lstm_hidden: 64
+    lstm_layers: 1
+    output_size: 1
+    dropout: 0.2
+
+data:
+  file_path: "data/combined_data.csv"
+  target_col: "Rainfall"
+  seq_length: 24  # Longer sequence for CNN-LSTM to capture more patterns
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+  batch_size: 32
+
+training:
+  epochs: 300
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  clip_grad: 5.0
+
+paths:
+  model_save_path: "results/models/cnn_lstm_model.pt"
+  metrics_save_path: "results/metrics/cnn_lstm_metrics.csv"
+  figures_path: "results/figures/cnn_lstm/"

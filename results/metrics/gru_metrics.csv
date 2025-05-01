@@ -1,0 +1,2 @@
+model,MSE,RMSE,MAE,R2,MAPE,param_hidden_size,param_num_layers,param_output_size,param_dropout,param_bidirectional
+gru,6985.756,83.58083,61.167263,0.06280636787414551,307598625.0,64,2,1,0.2,True

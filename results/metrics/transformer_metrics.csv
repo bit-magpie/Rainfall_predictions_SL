@@ -1,0 +1,2 @@
+model,MSE,RMSE,MAE,R2,MAPE,param_d_model,param_nhead,param_num_layers,param_dim_feedforward,param_output_size,param_dropout
+transformer,7833.513,88.50713,61.631775,-0.029183149337768555,344745250.0,64,4,2,256,1,0.1

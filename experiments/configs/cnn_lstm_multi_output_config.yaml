@@ -1,0 +1,29 @@
+model:
+  name: "cnn_lstm_multi_output"
+  params:
+    cnn_filters: [32, 64]  # Number of filters in each convolutional layer
+    kernel_size: 3
+    lstm_hidden: 96
+    lstm_layers: 2
+    output_size: 3         # Three outputs: rainfall, min temp, max temp
+    dropout: 0.25
+
+data:
+  file_path: "data/combined_data.csv"
+  target_cols: ["Rainfall", "Min_Temperature", "Max_Temperature"]
+  seq_length: 24           # Longer sequence for CNN-LSTM to capture more patterns
+  test_size: 0.15
+  val_size: 0.15
+  random_state: 42
+  batch_size: 32
+
+training:
+  epochs: 300
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  clip_grad: 5.0
+
+paths:
+  model_save_path: "results/models/cnn_lstm_multi_output_model.pt"
+  metrics_save_path: "results/metrics/cnn_lstm_multi_output_metrics.csv"
+  figures_path: "results/figures/cnn_lstm_multi_output/"

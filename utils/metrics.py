@@ -36,6 +36,60 @@ def calculate_metrics(y_true, y_pred):
         'MAPE': mape
     }
 
+def calculate_metrics_multi_target(y_true, y_pred, target_cols):
+    """
+    Calculate regression metrics for multi-target model evaluation.
+    
+    Parameters:
+    -----------
+    y_true : array-like
+        Actual target values with shape (n_samples, n_targets)
+    y_pred : array-like
+        Predicted target values with shape (n_samples, n_targets)
+    target_cols : list
+        List of target column names
+        
+    Returns:
+    --------
+    Dictionary of evaluation metrics for each target and overall
+    """
+    metrics = {}
+    n_targets = len(target_cols)
+    
+    # Calculate metrics for each target separately
+    for i, col in enumerate(target_cols):
+        y_true_col = y_true[:, i]
+        y_pred_col = y_pred[:, i]
+        
+        mse = mean_squared_error(y_true_col, y_pred_col)
+        rmse = np.sqrt(mse)
+        mae = mean_absolute_error(y_true_col, y_pred_col)
+        r2 = r2_score(y_true_col, y_pred_col)
+        mape = np.mean(np.abs((y_true_col - y_pred_col) / (np.abs(y_true_col) + 1e-8))) * 100
+        
+        metrics[f"{col}_MSE"] = mse
+        metrics[f"{col}_RMSE"] = rmse
+        metrics[f"{col}_MAE"] = mae
+        metrics[f"{col}_R2"] = r2
+        metrics[f"{col}_MAPE"] = mape
+    
+    # Calculate overall metrics
+    mse_overall = np.mean([metrics[f"{col}_MSE"] for col in target_cols])
+    rmse_overall = np.mean([metrics[f"{col}_RMSE"] for col in target_cols])
+    mae_overall = np.mean([metrics[f"{col}_MAE"] for col in target_cols])
+    r2_overall = np.mean([metrics[f"{col}_R2"] for col in target_cols])
+    mape_overall = np.mean([metrics[f"{col}_MAPE"] for col in target_cols])
+    
+    metrics.update({
+        'Overall_MSE': mse_overall,
+        'Overall_RMSE': rmse_overall,
+        'Overall_MAE': mae_overall,
+        'Overall_R2': r2_overall,
+        'Overall_MAPE': mape_overall
+    })
+    
+    return metrics
+
 
 def save_metrics(metrics_dict, model_name, config=None, file_path=None):
     """

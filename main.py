@@ -17,7 +17,7 @@ from experiments.run_experiment import run_gru_experiment, run_cnn_lstm_experime
 # Import functions for multi-output models
 from experiments.run_experiment import run_gru_multi_output_experiment, run_lstm_multi_output_experiment
 from experiments.run_experiment import run_cnn_lstm_multi_output_experiment, run_transformer_multi_output_experiment
-from experiments.run_experiment import run_random_forest_multi_output_experiment
+from experiments.run_experiment import run_random_forest_multi_output_experiment, run_lstm_attention_multi_output_experiment
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
         choices=[
             'linear', 'lstm', 'gru', 'cnn_lstm', 'transformer', 
             'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output',
-            'random_forest_multi_output',
+            'random_forest_multi_output', 'lstm_attention_multi_output',
             'all', 'all_single', 'all_multi'
         ],
         default='all',
@@ -48,7 +48,10 @@ def main():
     
     # Define model groups
     single_output_models = ['linear', 'lstm', 'gru', 'cnn_lstm', 'transformer']
-    multi_output_models = ['gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output', 'random_forest_multi_output']
+    multi_output_models = [
+        'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 
+        'transformer_multi_output', 'random_forest_multi_output', 'lstm_attention_multi_output'
+    ]
     
     # Determine which models to run
     models_to_run = []
@@ -160,6 +163,16 @@ def main():
             run_random_forest_multi_output_experiment(random_forest_multi_output_config)
         else:
             print(f"Error: Random Forest Multi-Output model config not found at {random_forest_multi_output_config_path}")
+            
+    # Run LSTM with Attention Multi-Output model experiment if requested
+    if 'lstm_attention_multi_output' in models_to_run:
+        lstm_attention_multi_output_config_path = config_dir / "lstm_attention_multi_output_config.yaml"
+        if lstm_attention_multi_output_config_path.exists():
+            print(f"\n{'='*50}\nRunning LSTM with Attention Multi-Output Model Experiment\n{'='*50}")
+            lstm_attention_multi_output_config = load_config(lstm_attention_multi_output_config_path)
+            run_lstm_attention_multi_output_experiment(lstm_attention_multi_output_config)
+        else:
+            print(f"Error: LSTM with Attention Multi-Output model config not found at {lstm_attention_multi_output_config_path}")
 
 
 if __name__ == "__main__":
@@ -171,7 +184,7 @@ if __name__ == "__main__":
     model_types = [
         'linear', 'lstm', 'gru', 'cnn_lstm', 'transformer', 
         'gru_multi_output', 'lstm_multi_output', 'cnn_lstm_multi_output', 'transformer_multi_output',
-        'random_forest_multi_output'
+        'random_forest_multi_output', 'lstm_attention_multi_output'
     ]
     for model_type in model_types:
         os.makedirs(f"results/figures/{model_type}", exist_ok=True)

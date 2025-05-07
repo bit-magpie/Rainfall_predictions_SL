@@ -16,7 +16,9 @@ from models.lstm.model import LSTMModel, train as train_lstm, predict as predict
 from models.gru.model import GRUModel, train as train_gru, predict as predict_gru
 from models.cnn_lstm.model import CNNLSTMModel, train as train_cnn_lstm, predict as predict_cnn_lstm
 from models.transformer.model import TransformerModel, train as train_transformer, predict as predict_transformer
-from models.random_forest.model import RandomForestModel, train as train_random_forest, predict as predict_random_forest
+from models.lstm_attention.model import LSTMWithAttentionModel, train as train_lstm_attention, predict as predict_lstm_attention, save_model
+from models.random_forest.model import RandomForestModel, train as train_random_forest
+from models.random_forest.model import predict as predict_random_forest, save_model as rf_save_model
 from utils.data_utils import prepare_data, prepare_data_multi_target, inverse_transform_target, inverse_transform_multi_target
 from utils.metrics import calculate_metrics, calculate_metrics_multi_target, save_metrics
 from utils.plot_utils import plot_training_history, plot_predictions, plot_scatter, plot_feature_importance
@@ -991,6 +993,117 @@ def run_transformer_multi_output_experiment(config):
     )
 
 
+def run_lstm_attention_multi_output_experiment(config):
+    """Run experiment with LSTM with Attention model for multiple target prediction."""
+    print("Running LSTM with Attention model for multi-target prediction experiment...")
+    
+    # Prepare data for multiple targets
+    data_dict = prepare_data_multi_target(
+        file_path=config['data']['file_path'],
+        target_cols=config['data']['target_cols'],
+        seq_length=config['data']['seq_length'],
+        test_size=config['data']['test_size'],
+        val_size=config['data']['val_size'],
+        random_state=config['data']['random_state']
+    )
+    
+    # Create dataloaders
+    train_loader, val_loader, test_loader = create_dataloaders(
+        data_dict, batch_size=config['data']['batch_size']
+    )
+    
+    # Get input size
+    input_size = data_dict['X_train'].shape[2]  # Number of features
+    output_size = len(config['data']['target_cols'])  # Number of target variables
+    
+    # Create model
+    model = LSTMWithAttentionModel(
+        input_size=input_size,
+        hidden_size=config['model']['params']['hidden_size'],
+        num_layers=config['model']['params']['num_layers'],
+        output_size=output_size,
+        dropout=config['model']['params']['dropout'],
+        bidirectional=config['model']['params'].get('bidirectional', False)
+    )
+    
+    # Train model
+    history = train_lstm_attention(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        epochs=config['training']['epochs'],
+        learning_rate=config['training']['learning_rate'],
+        weight_decay=config['training']['weight_decay'],
+        clip_grad=config['training']['clip_grad']
+    )
+    
+    # Evaluate model
+    y_true_scaled, y_pred_scaled = predict_lstm_attention(model, test_loader)
+    
+    # Inverse transform predictions and true values for each target
+    y_true_original = inverse_transform_multi_target(y_true_scaled, data_dict['scaler_y'], data_dict['target_cols'])
+    y_pred_original = inverse_transform_multi_target(y_pred_scaled, data_dict['scaler_y'], data_dict['target_cols'])
+    
+    # Calculate metrics
+    metrics = calculate_metrics_multi_target(y_true_original, y_pred_original, data_dict['target_cols'])
+    
+    print("\nTest Metrics:")
+    # Print overall metrics
+    print("Overall Metrics:")
+    for metric_name in ['MSE', 'RMSE', 'MAE', 'R2', 'MAPE']:
+        print(f"Overall_{metric_name}: {metrics[f'Overall_{metric_name}']:.4f}")
+    
+    # Print metrics for each target
+    for target_col in data_dict['target_cols']:
+        print(f"\n{target_col} Metrics:")
+        for metric_name in ['MSE', 'RMSE', 'MAE', 'R2', 'MAPE']:
+            print(f"{target_col}_{metric_name}: {metrics[f'{target_col}_{metric_name}']:.4f}")
+    
+    # Create results directory if it doesn't exist
+    os.makedirs(os.path.dirname(config['paths']['model_save_path']), exist_ok=True)
+    os.makedirs(config['paths']['figures_path'], exist_ok=True)
+    
+    # Save model
+    save_model(model, config['paths']['model_save_path'])
+    print(f"Model saved to {config['paths']['model_save_path']}")
+    
+    # Save metrics
+    save_metrics(
+        metrics_dict=metrics,
+        model_name="lstm_attention_multi_output",
+        config=config['model']['params'],
+        file_path=config['paths']['metrics_save_path']
+    )
+    
+    # Plot and save training history
+    plot_training_history(
+        history,
+        title="LSTM with Attention Multi-Output Model Training History",
+        save_path=os.path.join(config['paths']['figures_path'], "training_history.png")
+    )
+    
+    # Plot and save multi-target predictions
+    plot_multi_target_predictions(
+        y_true_original, y_pred_original, data_dict['target_cols'],
+        title="LSTM with Attention Multi-Output Model Predictions",
+        save_path=os.path.join(config['paths']['figures_path'], "predictions.png")
+    )
+    
+    # Plot and save multi-target scatter plots
+    plot_multi_target_scatter(
+        y_true_original, y_pred_original, data_dict['target_cols'],
+        title="LSTM with Attention Multi-Output Model: Predicted vs Actual",
+        save_path=os.path.join(config['paths']['figures_path'], "scatter.png")
+    )
+    
+    # Plot and save target component analysis
+    plot_target_components(
+        y_true_original, y_pred_original, data_dict['target_cols'],
+        title="LSTM with Attention Multi-Output Model: Target Components Analysis",
+        save_path=os.path.join(config['paths']['figures_path'], "components_analysis.png")
+    )
+
+
 def run_random_forest_multi_output_experiment(config):
     """Run experiment with Random Forest model for multiple target prediction."""
     print("Running Random Forest model for multi-target prediction experiment...")
@@ -1061,14 +1174,6 @@ def run_random_forest_multi_output_experiment(config):
         file_path=config['paths']['metrics_save_path']
     )
     
-    # Plot and save training history
-    if history:  # Only if history is tracked
-        plot_training_history(
-            history,
-            title="Random Forest Multi-Output Model Training History",
-            save_path=os.path.join(config['paths']['figures_path'], "training_history.png")
-        )
-    
     # Plot and save multi-target predictions
     plot_multi_target_predictions(
         y_true_original, y_pred_original, data_dict['target_cols'],
@@ -1123,6 +1228,8 @@ def main():
         run_cnn_lstm_multi_output_experiment(config)
     elif config['model']['name'].lower() == 'transformer_multi_output':
         run_transformer_multi_output_experiment(config)
+    elif config['model']['name'].lower() == 'lstm_attention_multi_output':
+        run_lstm_attention_multi_output_experiment(config)
     elif config['model']['name'].lower() == 'random_forest_multi_output':
         run_random_forest_multi_output_experiment(config)
     else:
